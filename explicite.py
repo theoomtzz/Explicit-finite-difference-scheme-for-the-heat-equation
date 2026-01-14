@@ -1,5 +1,6 @@
 import numpy as np
-import time 
+import time
+
 ##  Initialisation of phyiscals parameters
 
 # Total depth (meters)
@@ -52,26 +53,33 @@ U[:, 0] = Uini(T)
 # Condition d'arret si non convergence
 maxiter = 500
 
-# Sauvegarde de la dernière temprerature calculée
-Uold = U[:,:]
-
-err = 1
-count = 0
-
 # On met a jour chaque année la température initial avec la temperature final de l'an précédent
 # Obtenir un 
+err = 1
 while err > 10**-4:
+
+    maxiter -=1
+    # Sauvegarde de la dernière temperature calculée
+    Uold = U.copy()
+
     # Calcul de U au temps suivant pour chaque profondeur
-    for i in range (1, Nt):
-        
-        a = (K * dt / (dz**2)) * (U[i-1, 0: -2])
-        U[i, 1: -1] = U[i-1, 1: -1] + (K * dt / (dz**2)) * (U[i-1, 0: -2] - 2 * U[i-1, 1: -1] + U[i-1, 2:])
-    count +=1
-    if count > 500:
+    for t in range (1, Nt):
+        U[t, 1: -1] = U[t-1, 1: -1] + (K * dt / (dz**2)) * (U[t-1, 0: -2] - 2 * U[t-1, 1: -1] + U[t-1, 2:])
+    
+    # Condition au bord (fond)
+    U[:, -1] = U[:, -2]
+
+    if maxiter == 0:
         print("Instable solution")
-        StopIteration
-    # Calcul de U au temps final
-    # U[-1, :] = Ufin()
+        raise SystemExit
+
+    # Recherche de l'État Stationnaire Périodique
+    err = np.linalg.norm(U - Uold)
+
+    # Continuité entre le fin d'année précédente et le debut de la nouvelle année.
+    U[0, :] = U[-1, :]
+
+
 # End timer
 end_time = time.time()
 
